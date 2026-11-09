@@ -7,11 +7,9 @@
 
 <img align="right" src="./assets/rain-window.gif" width="180" alt="雨窗插图" />
 
-### Hi
+### Hi ᯇ⩊ᯇ
 
-I'm saltseven77 ᯇ⩊ᯇ
-
-Wuhan University
+Undergraduate student at Wuhan University | Major in Cyber Science and Engineering
 
 
 <div align="center">
