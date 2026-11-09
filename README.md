@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="./assets/header.svg" width="720" alt="saltseven77 和猫咪冰淇淋" />
-</p>
-
 <img align="right" src="./assets/rain-window.gif" width="180" alt="一扇下着细雨的蓝灰色小窗" />
 
 ### Hi
