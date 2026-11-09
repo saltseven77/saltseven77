@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from html import escape
 from html.parser import HTMLParser
 from pathlib import Path
 import re
+import time
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 
@@ -65,7 +68,7 @@ def render(html, username):
     left, top = 57, 40
     week_count = (end - anchor).days // 7 + 1
     width = max(1000, int(left + week_count * pitch + 22))
-    title = f"{total:,} contributions in the last year"
+    title = f"{total:,} contributions in {start.year}"
     parts = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="195" viewBox="0 0 {width} 195" role="img" aria-labelledby="title desc">',
         f'<title id="title">{escape(username)} — {title}</title>',
@@ -97,21 +100,37 @@ def render(html, username):
 def main():
     cli = argparse.ArgumentParser()
     cli.add_argument("--username", default="saltseven77")
+    cli.add_argument("--year", type=int, default=datetime.now(timezone.utc).year)
     cli.add_argument("--output", type=Path, default=Path(__file__).resolve().parents[1] / "assets" / "contributions.svg")
     cli.add_argument("--source-html", type=Path, help="Optional previously fetched calendar for local preview.")
     args = cli.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9-]{1,39}", args.username):
         cli.error("Invalid GitHub username")
+    if not 2008 <= args.year <= 9999:
+        cli.error("Invalid contribution year")
     if args.source_html:
         html = args.source_html.read_text(encoding="utf-8")
     else:
-        request = Request(f"https://github.com/users/{args.username}/contributions", headers={"User-Agent": "profile-contribution-calendar", "Accept": "text/html"})
-        with urlopen(request, timeout=40) as response:
-            html = response.read().decode("utf-8")
+        query = urlencode({"from": f"{args.year}-01-01", "to": f"{args.year}-12-31"})
+        request = Request(f"https://github.com/users/{args.username}/contributions?{query}", headers={"User-Agent": "profile-contribution-calendar", "Accept": "text/html"})
+        for attempt in range(3):
+            try:
+                with urlopen(request, timeout=40) as response:
+                    html = response.read().decode("utf-8")
+                break
+            except HTTPError as error:
+                if error.code not in (429, 500, 502, 503, 504) or attempt == 2:
+                    raise
+            except (URLError, TimeoutError):
+                if attempt == 2:
+                    raise
+            time.sleep(2 * (attempt + 1))
     svg, total, start, end = render(html, args.username)
+    if start != date(args.year, 1, 1) or end != date(args.year, 12, 31):
+        raise ValueError("Unexpected date range; existing contribution image kept.")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(svg, encoding="utf-8")
-    print(f"{args.username}: {total} public contributions, {start} to {end}. Saved {args.output}")
+    print(f"{args.username}: {total} publicly visible contributions, {start} to {end}. Saved {args.output}")
 
 
 if __name__ == "__main__":
