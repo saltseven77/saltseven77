@@ -9,7 +9,11 @@
 
 ### Hi ᯇ⩊ᯇ
 
-Undergraduate student at Wuhan University | Major in Cyber Science and Engineering
+Wuhan University
+
+The past was honestly the best, but my best is what comes next
+Well be singin' till the morn
+My moment is yet to come
 
 
 <div align="center">
